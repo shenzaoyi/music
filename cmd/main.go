@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 func Prepare() {
@@ -36,27 +37,21 @@ func main() {
 	singer := "周杰伦"
 	service := services.NewMusicService()
 
-	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5) // 控制最大并发数为 5，可调整
 
-		if info.IsDir() {
+	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
 			return nil
 		}
 
-		// 只处理 .flac 和 .mp3 文件
-		//if !strings.HasSuffix(info.Name(), ".flac") && !strings.HasSuffix(info.Name(), ".mp3") {
-		//	return nil
-		//}
-
 		ext := filepath.Ext(info.Name())
+		if ext != ".flac" && ext != ".mp3" {
+			return nil
+		}
+
 		baseName := strings.TrimSuffix(info.Name(), ext)
-
-		// 专辑名 = 父目录名
 		album := filepath.Base(filepath.Dir(path))
-
-		// 去掉 "周杰伦 - " 前缀
 		title := strings.TrimPrefix(baseName, singer+" - ")
 
 		music := &models.MusicInfo{
@@ -65,15 +60,25 @@ func main() {
 			Singer: singer,
 		}
 
-		fmt.Printf("开始上传 [%s] - [%s] - [%s]\n", album, title, path)
-		if err := service.CreateMusic(music, path); err != nil {
-			log.Printf("❌ 上传失败 [%s]: %v\n", info.Name(), err)
-		} else {
-			log.Printf("✅ 上传成功 [%s]\n", info.Name())
-		}
+		wg.Add(1)
+		sem <- struct{}{} // 占用一个槽位
+
+		go func(m *models.MusicInfo, p string, name string, album string) {
+			defer wg.Done()
+			defer func() { <-sem }() // 释放槽位
+
+			fmt.Printf("开始上传 [%s] - [%s] - [%s]\n", album, m.Name, p)
+			if err := service.CreateMusic(m, p); err != nil {
+				log.Printf("❌ 上传失败 [%s]: %v\n", name, err)
+			} else {
+				log.Printf("✅ 上传成功 [%s]\n", name)
+			}
+		}(music, path, info.Name(), album)
 
 		return nil
 	})
+
+	wg.Wait()
 
 	if err != nil {
 		log.Fatalf("遍历目录出错: %v", err)
