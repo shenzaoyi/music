@@ -1,7 +1,6 @@
 package services
 
 import (
-	"Music/config"
 	"Music/models"
 	"Music/repositories"
 	"Music/tengcent_cos"
@@ -96,7 +95,12 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 	}
 	// 转换为 SearchResult 结构
 	var results []SearchResult
+	//client, err := tengcent_cos.InitClient()
 	for _, m := range musics {
+		//url, err := client.GetPresignedURL(strconv.Itoa(int(m.ID)), 1000*time.Minute)
+		if err != nil {
+			return nil, err
+		}
 		results = append(results, SearchResult{
 			ID:       strconv.Itoa(int(m.ID)),
 			Name:     m.Location,
@@ -105,7 +109,9 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 			Artist:   m.Singer,
 			Album:    m.Album,
 			Artwork:  m.Cover,
-			URL:      config.PLAYBASEURL + strconv.Itoa(int(m.ID)),
+			URL:      m.Location,
+			//URL:      config.PLAYBASEURL + strconv.Itoa(int(m.ID)),
+			//URL: url,
 		})
 	}
 	return results, nil

@@ -65,3 +65,23 @@ func (c *CosClient) DownloadStreamWithRange(key string, rangeHeader string) (*co
 	}
 	return c.client.Object.Get(context.Background(), key, opt)
 }
+
+func (c *CosClient) GetPresignedURL(key string, expire time.Duration) (string, error) {
+	// 构造签名 URL
+	presignedURL, err := c.client.Object.GetPresignedURL(
+		context.Background(),
+		http.MethodGet,
+		key,
+		config.Config.TencentCOS.SecretID,
+		config.Config.TencentCOS.SecretKey,
+		expire,
+		&cos.PresignedURLOptions{
+			Query:  nil, // 如果你有额外的 query 参数，可以加
+			Header: nil, // 如果你希望签入 Header，也可以指定
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	return presignedURL.String(), nil
+}
