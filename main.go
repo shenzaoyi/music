@@ -48,7 +48,7 @@ func main() {
 
 	// 启动服务
 	utils.Info("启动服务，监听端口：8080")
-	if err := r.Run(":8888"); err != nil {
+	if err := r.Run(":8080"); err != nil {
 		utils.Fatal("服务启动失败:", err)
 	}
 }
