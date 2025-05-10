@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type CosClient struct {
@@ -24,6 +25,7 @@ func InitClient() (*CosClient, error) {
 	b := &cos.BaseURL{BucketURL: u, ServiceURL: su}
 	// 1.永久密钥
 	client := cos.NewClient(b, &http.Client{
+		Timeout: 10 * time.Minute,
 		Transport: &cos.AuthorizationTransport{
 			SecretID:  config.Config.TencentCOS.SecretID,  // 用户的 SecretId，建议使用子账号密钥，授权遵循最小权限指引，降低使用风险。子账号密钥获取可参考 https://cloud.tencent.com/document/product/598/37140
 			SecretKey: config.Config.TencentCOS.SecretKey, // 用户的 SecretKey，建议使用子账号密钥，授权遵循最小权限指引，降低使用风险。子账号密钥获取可参考 https://cloud.tencent.com/document/product/598/37140

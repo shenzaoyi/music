@@ -38,7 +38,7 @@ func main() {
 	service := services.NewMusicService()
 
 	var wg sync.WaitGroup
-	sem := make(chan struct{}, 5) // 控制最大并发数为 5，可调整
+	sem := make(chan struct{}, 3) // 控制最大并发数为 5，可调整
 
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() {
