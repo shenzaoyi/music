@@ -1,7 +1,9 @@
 package main
 
 import (
+	"Music/config"
 	"Music/models"
+	"Music/my_utils"
 	"Music/services"
 	"fmt"
 	"log"
@@ -10,7 +12,26 @@ import (
 	"strings"
 )
 
+func Prepare() {
+	// 初始化日志
+	logFile, err := my_utils.SetupLogFile("app.log")
+	if err != nil {
+		my_utils.Fatal("日志设置失败:", err)
+	}
+	defer logFile.Close()
+
+	// 设置日志级别
+	my_utils.SetLogLevel(my_utils.LevelInfo)
+
+	// Init Config
+	config.InitConfig()
+
+	// Init Database
+	models.Init()
+}
+
 func main() {
+	Prepare()
 	rootDir := "./src/"
 	singer := "周杰伦"
 	service := services.NewMusicService()
