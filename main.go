@@ -5,8 +5,6 @@ import (
 	"Music/models"
 	"Music/my_utils"
 	"Music/router"
-	"Music/services"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,18 +26,18 @@ func main() {
 	models.Init()
 
 	// test
-	services := services.MusicService{}
-	musicinfo := models.MusicInfo{
-		Singer: "jay chou",
-		Album:  "fantasy",
-		Name:   "yequ",
-		Cover:  "www.cover.com",
-	}
-	path := "src/1.mp3"
-	err = services.CreateMusic(&musicinfo, path)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	//services := services.MusicService{}
+	//musicinfo := models.MusicInfo{
+	//	Singer: "jay chou",
+	//	Album:  "fantasy",
+	//	Name:   "yequ",
+	//	Cover:  "www.cover.com",
+	//}
+	//path := "src/1.mp3"
+	//err = services.CreateMusic(&musicinfo, path)
+	//if err != nil {
+	//	fmt.Println(err.Error())
+	//}
 	// test
 
 	// 初始化路由
