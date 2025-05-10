@@ -1,0 +1,39 @@
+# 忽略 IDEA 编辑器文件夹
+.idea/
+
+# 忽略日志文件
+*.log
+
+# 忽略编译生成的二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 忽略编译输出目录，通常 Go 会把编译文件在当前目录或指定目录生成
+bin/
+build/
+
+# 忽略依赖目录 (如果有 vendor 文件夹)
+vendor/
+
+# 忽略操作系统产生的文件
+.DS_Store
+Thumbs.db
+
+# 忽略 GoLand 或 JetBrains IDE 生成的其他文件
+*.iml
+out/
+
+# 忽略临时文件
+*.tmp
+*.temp
+
+# 忽略环境文件（如果有）
+.env
+
+# src
+src/
+
+config/config.yaml
