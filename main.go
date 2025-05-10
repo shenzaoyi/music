@@ -19,11 +19,11 @@ func main() {
 	// 设置日志级别
 	utils.SetLogLevel(utils.LevelInfo)
 
-	// Init Database
-	models.Init()
-
 	// Init Config
 	config.InitConfig()
+
+	// Init Database
+	models.Init()
 
 	// test
 	services := services.MusicService{}
