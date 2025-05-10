@@ -8,12 +8,12 @@ import (
 	"log"
 )
 
-var DBNAME = config.Config.Database.Name
-var USER = config.Config.Database.User
-var PASSWORD = config.Config.Database.Password
 var DB *gorm.DB
 
 func Init() {
+	var DBNAME = config.Config.Database.Name
+	var USER = config.Config.Database.User
+	var PASSWORD = config.Config.Database.Password
 	dsn := USER + ":" + PASSWORD + "@tcp(127.0.0.1:3306)/" + DBNAME + "?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})

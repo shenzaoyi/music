@@ -31,13 +31,6 @@ type MusicItem struct {
 
 // SearchMusic handles music search requests
 func SearchMusic(c *gin.Context) {
-	// 获取完整请求域名
-	scheme := "http"
-	if c.Request.TLS != nil {
-		scheme = "https"
-	}
-	baseURL := fmt.Sprintf("%s://%s", scheme, c.Request.Host)
-
 	// 获取查询参数
 	query := c.Query("keyword")
 	searchType := c.DefaultQuery("type", "music")
@@ -47,11 +40,6 @@ func SearchMusic(c *gin.Context) {
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
-		}
-
-		// 拼接 URL
-		for i := range results {
-			results[i].URL = fmt.Sprintf("%s/music/v1/play?id=%s", baseURL, url.QueryEscape(results[i].ID))
 		}
 
 		c.JSON(200, gin.H{

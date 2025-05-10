@@ -14,7 +14,6 @@ func (r *MusicRepository) GetByID(id uint) (*models.MusicInfo, error) {
 	err := models.DB.First(&music, id).Error
 	return &music, err
 }
-
 func (r *MusicRepository) Update(id uint, updates map[string]interface{}) error {
 	return models.DB.Model(&models.MusicInfo{}).Where("id = ?", id).Updates(updates).Error
 }
@@ -30,4 +29,12 @@ func (r *MusicRepository) SearchByKeyword(keyword string) ([]models.MusicInfo, e
 		"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%").
 		Find(&results).Error
 	return results, err
+}
+
+func (r *MusicRepository) ExistsByFields(name, album, singer string) (bool, error) {
+	var count int64
+	err := models.DB.Model(&models.MusicInfo{}).
+		Where("name = ? AND album = ? AND singer = ?", name, album, singer).
+		Count(&count).Error
+	return count > 0, err
 }

@@ -23,8 +23,11 @@ func NewMusicService() *MusicService {
 // 创建音乐记录（带去重判断）
 func (s *MusicService) CreateMusic(info *models.MusicInfo, filepath string) error {
 	// 检查是否已存在同名歌曲（可选逻辑）
-	existing, _ := s.repo.GetByID(info.ID)
-	if existing != nil && existing.ID != 0 {
+	exists, err := s.repo.ExistsByFields(info.Name, info.Album, info.Singer)
+	if err != nil {
+		return err
+	}
+	if exists {
 		return errors.New("音乐记录已存在")
 	}
 	// 存储到数据库
@@ -86,6 +89,7 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 		results = append(results, SearchResult{
 			ID:   fmt.Sprintf("%d", m.ID),
 			Name: m.Name,
+			URL:  m.Location,
 		})
 	}
 	return results, nil

@@ -3,9 +3,11 @@ package main
 import (
 	"Music/config"
 	"Music/models"
+	"Music/router"
 	"Music/services"
 	"Music/utils"
 	"fmt"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -41,12 +43,12 @@ func main() {
 	// test
 
 	// 初始化路由
-	//r := gin.Default()
-	//router.InitRouter(r)
-	//
-	//// 启动服务
-	//utils.Info("启动服务，监听端口：8080")
-	//if err := r.Run(":8080"); err != nil {
-	//	utils.Fatal("服务启动失败:", err)
-	//}
+	r := gin.Default()
+	router.InitRouter(r)
+
+	// 启动服务
+	utils.Info("启动服务，监听端口：8080")
+	if err := r.Run(":8888"); err != nil {
+		utils.Fatal("服务启动失败:", err)
+	}
 }
