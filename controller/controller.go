@@ -8,6 +8,7 @@ import (
 	"github.com/dhowden/tag"
 	"github.com/gin-gonic/gin"
 	"io"
+	"log"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -201,7 +202,6 @@ func isAudioFile(filename string) bool {
 	return false
 }
 
-// PlayMusic handles music play requests
 func PlayMusic(c *gin.Context) {
 	idStr := c.Query("id")
 	id, err := strconv.Atoi(idStr)
@@ -210,32 +210,44 @@ func PlayMusic(c *gin.Context) {
 		return
 	}
 
-	// 查询数据库，获取对应的 Location 和 COS key
+	// 查询音乐记录
 	music, err := musicService.GetByID(uint(id))
 	if err != nil || music == nil || music.Location == "" {
 		c.JSON(404, gin.H{"error": "music not found"})
 		return
 	}
-	// 从 COS 读取音频数据流
-	cosClient, err := tengcent_cos.InitClient() // 假设你已经封装了初始化逻辑
+
+	// 初始化 COS 客户端
+	cosClient, err := tengcent_cos.InitClient()
 	if err != nil {
-		fmt.Println("New CosClient Error")
-	}
-	reader, err := cosClient.DownloadStream(idStr)
-	if err != nil {
-		c.JSON(500, gin.H{"error": "failed to stream from COS"})
+		c.JSON(500, gin.H{"error": "cos init error"})
 		return
 	}
-	defer reader.Close()
 
-	// 设置音频响应头
-	c.Header("Content-Type", "audio/mpeg")
-	c.Header("Accept-Ranges", "bytes")
+	// 从前端请求中获取 Range
+	rangeHeader := c.GetHeader("Range")
 
-	// 将 COS 音频内容复制到响应体
-	_, err = io.Copy(c.Writer, reader)
+	// 读取 COS 音频数据（支持 Range）
+	resp, err := cosClient.DownloadStreamWithRange(strconv.Itoa(int(music.ID)), rangeHeader)
 	if err != nil {
-		c.JSON(500, gin.H{"error": "streaming failed"})
+		c.JSON(500, gin.H{"error": "failed to stream from COS"})
+		fmt.Println(err.Error())
+		return
+	}
+	defer resp.Body.Close()
+
+	// 设置响应头
+	for k, values := range resp.Header {
+		for _, v := range values {
+			c.Writer.Header().Add(k, v)
+		}
+	}
+	c.Status(resp.StatusCode)
+
+	// 将响应体写给前端播放器
+	_, err = io.Copy(c.Writer, resp.Body)
+	if err != nil {
+		log.Println("streaming failed:", err)
 	}
 }
 

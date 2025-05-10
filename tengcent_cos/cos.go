@@ -58,3 +58,10 @@ func (cosClient *CosClient) DownloadStream(key string) (io.ReadCloser, error) {
 	}
 	return resp.Body, nil
 }
+func (c *CosClient) DownloadStreamWithRange(key string, rangeHeader string) (*cos.Response, error) {
+	opt := &cos.ObjectGetOptions{}
+	if rangeHeader != "" {
+		opt.Range = rangeHeader
+	}
+	return c.client.Object.Get(context.Background(), key, opt)
+}

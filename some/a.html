@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>音乐播放测试</title>
+</head>
+<body>
+  <h2>音乐播放测试</h2>
+  <audio id="player" controls style="width: 100%;">
+    <!-- 注意替换为你实际的 API 地址 -->
+    <source src="http://localhost:8080/music/v1/play?id=44" type="audio/mpeg">
+    您的浏览器不支持 audio 元素。
+  </audio>
+
+  <script>
+    const audio = document.getElementById('player');
+
+    // 显示 Range 支持检测结果
+    audio.addEventListener('loadedmetadata', () => {
+      console.log("音频加载完成，时长：" + audio.duration + " 秒");
+    });
+
+    // 当用户拖动进度条
+    audio.addEventListener('seeking', () => {
+      console.log("用户尝试跳转到位置: " + audio.currentTime + " 秒");
+    });
+  </script>
+</body>
+</html>
