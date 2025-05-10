@@ -1,14 +1,17 @@
 package controller
 
 import (
+	"Music/my_utils"
 	"Music/services"
-	"Music/utils"
+	"Music/tengcent_cos"
 	"fmt"
 	"github.com/dhowden/tag"
 	"github.com/gin-gonic/gin"
+	"io"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -62,7 +65,7 @@ func searchMusicFiles(query string, musicRoot string) []MusicItem {
 
 	err := filepath.Walk(musicRoot, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			utils.Error("遍历路径失败:", err)
+			my_utils.Error("遍历路径失败:", err)
 			return err
 		}
 
@@ -79,7 +82,7 @@ func searchMusicFiles(query string, musicRoot string) []MusicItem {
 		// 尝试读取音频文件元数据
 		metadataItem, err := extractMusicMetadata(path)
 		if err != nil {
-			utils.Error("无法提取元数据：", err)
+			my_utils.Error("无法提取元数据：", err)
 			return nil
 		}
 
@@ -95,17 +98,17 @@ func searchMusicFiles(query string, musicRoot string) []MusicItem {
 			metadataItem.Platform = "shenzaoyi"
 
 			results = append(results, metadataItem)
-			utils.Debug("匹配的音乐项: %+v", metadataItem)
+			my_utils.Debug("匹配的音乐项: %+v", metadataItem)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		utils.Error("遍历路径失败:", err)
+		my_utils.Error("遍历路径失败:", err)
 	}
 
-	utils.Info("总共匹配到 %d 个结果", len(results))
+	my_utils.Info("总共匹配到 %d 个结果", len(results))
 	return results
 }
 
@@ -201,33 +204,40 @@ func isAudioFile(filename string) bool {
 
 // PlayMusic handles music play requests
 func PlayMusic(c *gin.Context) {
-	// URL 解码
-	id, err := url.QueryUnescape(c.Query("id"))
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		c.JSON(400, gin.H{"error": "Invalid id"})
 		return
 	}
 
-	musicRoot := "/home/ftpuser/Music"
-	musicPath := filepath.Join(musicRoot, id)
-
-	// 如果直接路径不存在，尝试模糊匹配
-	if _, err := os.Stat(musicPath); os.IsNotExist(err) {
-		musicPath = findMusicFileWithVariants(musicRoot, id)
-		if musicPath == "" {
-			utils.Warn("音乐文件未找到: %s", id)
-			c.JSON(404, gin.H{"error": "music not found"})
-			return
-		}
+	// 查询数据库，获取对应的 Location 和 COS key
+	music, err := musicService.GetByID(uint(id))
+	if err != nil || music == nil || music.Location == "" {
+		c.JSON(404, gin.H{"error": "music not found"})
+		return
 	}
+	// 从 COS 读取音频数据流
+	cosClient, err := tengcent_cos.InitClient() // 假设你已经封装了初始化逻辑
+	if err != nil {
+		fmt.Println("New CosClient Error")
+	}
+	reader, err := cosClient.DownloadStream(idStr)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "failed to stream from COS"})
+		return
+	}
+	defer reader.Close()
 
-	// Set proper file headers
+	// 设置音频响应头
 	c.Header("Content-Type", "audio/mpeg")
 	c.Header("Accept-Ranges", "bytes")
 
-	// Send the music file to the client
-	utils.Info("正在提供音乐文件: %s", musicPath)
-	c.File(musicPath)
+	// 将 COS 音频内容复制到响应体
+	_, err = io.Copy(c.Writer, reader)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "streaming failed"})
+	}
 }
 
 // findMusicFileWithVariants 尝试查找文件的多种变体
@@ -276,27 +286,27 @@ func GetAlbumMusics(c *gin.Context) {
 
 	// 使用 ShouldBindJSON 绑定 JSON 请求体
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.Error("参数绑定错误:", err)
+		my_utils.Error("参数绑定错误:", err)
 		c.JSON(400, gin.H{"error": "无效的请求参数"})
 		return
 	}
 
 	keyword := req.URL
-	utils.Info("接收到的搜索关键词: %s", keyword)
+	my_utils.Info("接收到的搜索关键词: %s", keyword)
 
 	if keyword == "" {
-		utils.Warn("关键词为空")
+		my_utils.Warn("关键词为空")
 		c.JSON(400, gin.H{"error": "关键词不能为空"})
 		return
 	}
 
 	musicRoot := "/home/ftpuser/Music"
-	utils.Debug("音乐根目录: %s", musicRoot)
+	my_utils.Debug("音乐根目录: %s", musicRoot)
 
 	// 读取一级目录
 	dirs, err := os.ReadDir(musicRoot)
 	if err != nil {
-		utils.Error("读取目录失败:", err)
+		my_utils.Error("读取目录失败:", err)
 		c.JSON(500, gin.H{"error": "读取目录失败"})
 		return
 	}
@@ -304,37 +314,37 @@ func GetAlbumMusics(c *gin.Context) {
 	var matchedDir string
 
 	// 查找包含关键词的目录
-	utils.Debug("开始遍历目录")
+	my_utils.Debug("开始遍历目录")
 	for _, dir := range dirs {
 		if dir.IsDir() {
-			utils.Debug("检查目录: %s", dir.Name())
+			my_utils.Debug("检查目录: %s", dir.Name())
 			if strings.Contains(strings.ToLower(dir.Name()), strings.ToLower(keyword)) {
 				matchedDir = dir.Name()
-				utils.Info("找到匹配目录: %s", matchedDir)
+				my_utils.Info("找到匹配目录: %s", matchedDir)
 				break
 			}
 		}
 	}
 
 	if matchedDir == "" {
-		utils.Warn("未找到匹配的专辑")
+		my_utils.Warn("未找到匹配的专辑")
 		c.JSON(404, gin.H{"error": "未找到匹配的专辑"})
 		return
 	}
 
 	// 读取匹配目录下的音乐文件
 	albumPath := filepath.Join(musicRoot, matchedDir)
-	utils.Debug("专辑路径: %s", albumPath)
+	my_utils.Debug("专辑路径: %s", albumPath)
 
 	files, err := os.ReadDir(albumPath)
 	if err != nil {
-		utils.Error("读取专辑失败:", err)
+		my_utils.Error("读取专辑失败:", err)
 		c.JSON(500, gin.H{"error": "读取专辑失败"})
 		return
 	}
 
 	var musicList []map[string]string
-	utils.Debug("开始遍历音乐文件")
+	my_utils.Debug("开始遍历音乐文件")
 	for _, file := range files {
 		if !file.IsDir() {
 			filePath := filepath.Join(albumPath, file.Name())
@@ -342,7 +352,7 @@ func GetAlbumMusics(c *gin.Context) {
 			// 尝试提取元数据
 			metadata, err := extractMusicMetadata(filePath)
 			if err != nil {
-				utils.Error("无法提取元数据：", err)
+				my_utils.Error("无法提取元数据：", err)
 				continue
 			}
 
@@ -362,7 +372,7 @@ func GetAlbumMusics(c *gin.Context) {
 		}
 	}
 
-	utils.Info("总共找到 %d 首音乐", len(musicList))
+	my_utils.Info("总共找到 %d 首音乐", len(musicList))
 	c.JSON(200, gin.H{
 		"data": musicList,
 	})
@@ -374,7 +384,7 @@ func GetAlbumList(c *gin.Context) {
 	// 读取一级目录
 	dirs, err := os.ReadDir(musicRoot)
 	if err != nil {
-		utils.Error("读取目录失败:", err)
+		my_utils.Error("读取目录失败:", err)
 		c.JSON(500, gin.H{"error": "读取目录失败"})
 		return
 	}
@@ -383,10 +393,10 @@ func GetAlbumList(c *gin.Context) {
 	for _, dir := range dirs {
 		if dir.IsDir() {
 			albumList = append(albumList, dir.Name())
-			utils.Debug("找到专辑目录: %s", dir.Name())
+			my_utils.Debug("找到专辑目录: %s", dir.Name())
 		}
 	}
-	utils.Info("总共找到 %d 个专辑", len(albumList))
+	my_utils.Info("总共找到 %d 个专辑", len(albumList))
 
 	c.JSON(200, gin.H{
 		"data": albumList,

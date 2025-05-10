@@ -3,23 +3,23 @@ package main
 import (
 	"Music/config"
 	"Music/models"
+	"Music/my_utils"
 	"Music/router"
 	"Music/services"
-	"Music/utils"
 	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// 初始化日志
-	logFile, err := utils.SetupLogFile("app.log")
+	logFile, err := my_utils.SetupLogFile("app.log")
 	if err != nil {
-		utils.Fatal("日志设置失败:", err)
+		my_utils.Fatal("日志设置失败:", err)
 	}
 	defer logFile.Close()
 
 	// 设置日志级别
-	utils.SetLogLevel(utils.LevelInfo)
+	my_utils.SetLogLevel(my_utils.LevelInfo)
 
 	// Init Config
 	config.InitConfig()
@@ -47,8 +47,8 @@ func main() {
 	router.InitRouter(r)
 
 	// 启动服务
-	utils.Info("启动服务，监听端口：8080")
+	my_utils.Info("启动服务，监听端口：8080")
 	if err := r.Run(":8080"); err != nil {
-		utils.Fatal("服务启动失败:", err)
+		my_utils.Fatal("服务启动失败:", err)
 	}
 }

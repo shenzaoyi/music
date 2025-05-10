@@ -94,3 +94,6 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 	}
 	return results, nil
 }
+func (s *MusicService) GetByID(id uint) (*models.MusicInfo, error) {
+	return s.repo.GetByID(id)
+}

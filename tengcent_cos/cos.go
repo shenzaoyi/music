@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tencentyun/cos-go-sdk-v5"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -47,4 +48,11 @@ func (cosClient *CosClient) Upload(name string, filepath string) string {
 		panic(err)
 	}
 	return res.Location
+}
+func (cosClient *CosClient) DownloadStream(key string) (io.ReadCloser, error) {
+	resp, err := cosClient.client.Object.Get(context.Background(), key, nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Body, nil
 }
