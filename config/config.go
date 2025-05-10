@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+var PLAYBASEURL string = "http://localhost:8080/music/v1/play?id="
+
 type TencentCOSConfig struct {
 	Region    string `yaml:"region"`
 	Bucket    string `yaml:"bucket"`

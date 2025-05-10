@@ -1,6 +1,7 @@
 package services
 
 import (
+	"Music/config"
 	"Music/models"
 	"Music/repositories"
 	"Music/tengcent_cos"
@@ -78,8 +79,8 @@ func (s *MusicService) DeleteMusic(id uint) error {
 //	}
 type SearchResult struct {
 	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Title    string `json:"title"`
+	Name     string `json:"name"`  // 临时存储Location, 也就是腾讯云对象存储的路径
+	Title    string `json:"title"` // title 是歌曲名，前端忘记怎么写的了
 	Platform string `json:"platform"`
 	Artist   string `json:"artist"`
 	Album    string `json:"album"`
@@ -93,19 +94,18 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// 转换为 SearchResult 结构
 	var results []SearchResult
 	for _, m := range musics {
 		results = append(results, SearchResult{
 			ID:       strconv.Itoa(int(m.ID)),
-			Name:     m.Name,
+			Name:     m.Location,
 			Title:    m.Name,
 			Platform: "shenzaoyi",
 			Artist:   m.Singer,
 			Album:    m.Album,
 			Artwork:  m.Cover,
-			URL:      m.Location,
+			URL:      config.PLAYBASEURL + strconv.Itoa(int(m.ID)),
 		})
 	}
 	return results, nil
