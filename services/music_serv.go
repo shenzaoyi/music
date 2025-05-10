@@ -100,7 +100,7 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 		results = append(results, SearchResult{
 			ID:       strconv.Itoa(int(m.ID)),
 			Name:     m.Name,
-			Title:    "",
+			Title:    m.Name,
 			Platform: "shenzaoyi",
 			Artist:   m.Singer,
 			Album:    m.Album,
