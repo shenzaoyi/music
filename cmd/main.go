@@ -1,6 +1,8 @@
 package main
 
 import (
+	"Music/models"
+	"Music/services"
 	"fmt"
 	"log"
 	"os"
@@ -11,7 +13,7 @@ import (
 func main() {
 	rootDir := "./src/"
 	singer := "周杰伦"
-	//service := services.NewMusicService()
+	service := services.NewMusicService()
 
 	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -36,18 +38,18 @@ func main() {
 		// 去掉 "周杰伦 - " 前缀
 		title := strings.TrimPrefix(baseName, singer+" - ")
 
-		//music := &models.MusicInfo{
-		//	Name:   title,
-		//	Album:  album,
-		//	Singer: singer,
-		//}
+		music := &models.MusicInfo{
+			Name:   title,
+			Album:  album,
+			Singer: singer,
+		}
 
-		fmt.Printf("开始上传 [%s] - [%s]\n", album, title)
-		//if err := service.CreateMusic(music, path); err != nil {
-		//	log.Printf("❌ 上传失败 [%s]: %v\n", info.Name(), err)
-		//} else {
-		//	log.Printf("✅ 上传成功 [%s]\n", info.Name())
-		//}
+		fmt.Printf("开始上传 [%s] - [%s] - [%s]\n", album, title, path)
+		if err := service.CreateMusic(music, path); err != nil {
+			log.Printf("❌ 上传失败 [%s]: %v\n", info.Name(), err)
+		} else {
+			log.Printf("✅ 上传成功 [%s]\n", info.Name())
+		}
 
 		return nil
 	})
