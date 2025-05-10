@@ -70,10 +70,21 @@ func (s *MusicService) DeleteMusic(id uint) error {
 }
 
 // 搜索结果结构体（前端需要的结构）
+//
+//	type SearchResult struct {
+//		ID   string `json:"id"`
+//		Name string `json:"name"`
+//		URL  string `json:"url,omitempty"` // 最终由 handler 填充
+//	}
 type SearchResult struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	URL  string `json:"url,omitempty"` // 最终由 handler 填充
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Title    string `json:"title"`
+	Platform string `json:"platform"`
+	Artist   string `json:"artist"`
+	Album    string `json:"album"`
+	Artwork  string `json:"artwork"`
+	URL      string `json:"url"`
 }
 
 func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
@@ -87,9 +98,14 @@ func (s *MusicService) SearchMusic(keyword string) ([]SearchResult, error) {
 	var results []SearchResult
 	for _, m := range musics {
 		results = append(results, SearchResult{
-			ID:   fmt.Sprintf("%d", m.ID),
-			Name: m.Name,
-			URL:  m.Location,
+			ID:       strconv.Itoa(int(m.ID)),
+			Name:     m.Name,
+			Title:    "",
+			Platform: "shenzaoyi",
+			Artist:   m.Singer,
+			Album:    m.Album,
+			Artwork:  m.Cover,
+			URL:      m.Location,
 		})
 	}
 	return results, nil
